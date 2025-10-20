@@ -1,0 +1,28 @@
+# 환경 변수
+.env
+.env.local
+.env.production
+
+# 빌드 결과물
+build/
+dist/
+
+# Node modules
+node_modules/
+
+# 테스트
+coverage/
+
+# 로그
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo

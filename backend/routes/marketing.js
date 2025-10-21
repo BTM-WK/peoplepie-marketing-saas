@@ -127,6 +127,65 @@ ${previousPlan ? `지난 달 계획 참고:\n${previousPlan}\n` : ''}
   }
 });
 
+// 🆕 마케팅 계획 수정 API
+router.post('/modify', async (req, res) => {
+  try {
+    const { currentPlan, modifyRequest, month, year, brandData } = req.body;
+    
+    console.log(`✏️ 마케팅 계획 수정 중: ${year}년 ${month}월`);
+    console.log(`📝 수정 요청: ${modifyRequest}`);
+    
+    // 수정 프롬프트 구성
+    const modifyPrompt = `
+다음은 ${year}년 ${month}월의 현재 마케팅 계획입니다:
+
+${currentPlan}
+
+---
+
+사용자의 수정 요청:
+"${modifyRequest}"
+
+위 수정 요청을 반영하여 마케팅 계획을 업데이트해주세요.
+- 원래 계획의 전체 구조와 형식은 유지하되, 요청된 부분만 수정하세요.
+- 수정되지 않은 부분은 그대로 유지하세요.
+- 수정된 부분이 전체 계획과 일관성을 유지하도록 하세요.
+`;
+
+    // OpenAI API 호출
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: modifyPrompt }
+      ],
+      temperature: 0.7,
+      max_tokens: 4000
+    });
+
+    const modifiedPlan = completion.choices[0].message.content;
+
+    res.json({
+      success: true,
+      plan: modifiedPlan,
+      metadata: {
+        month,
+        year,
+        modifiedAt: new Date().toISOString(),
+        modifyRequest
+      }
+    });
+
+  } catch (error) {
+    console.error('마케팅 계획 수정 오류:', error);
+    res.status(500).json({
+      success: false,
+      error: '수정 중 오류가 발생했습니다.',
+      details: error.message
+    });
+  }
+});
+
 // 저장된 마케팅 계획 조회
 router.get('/plans', async (req, res) => {
   try {

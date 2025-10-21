@@ -11,6 +11,8 @@ function MarketingGenerator() {
   const [loading, setLoading] = useState(false);
   const [generatedPlan, setGeneratedPlan] = useState('');
   const [error, setError] = useState('');
+  const [modifyRequest, setModifyRequest] = useState('');
+  const [isModifying, setIsModifying] = useState(false);
 
   useEffect(() => {
     loadBrands();
@@ -52,9 +54,45 @@ function MarketingGenerator() {
         setGeneratedPlan(response.data.plan);
       }
     } catch (err) {
-      setError(err.response?.data?.error || '마케팅 계획 생성 실패');
+      setError(err.response?.data?.error || '마케팅 계획 생성 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleModify = async () => {
+    if (!modifyRequest.trim()) {
+      setError('수정 요청 내용을 입력해주세요.');
+      return;
+    }
+
+    setIsModifying(true);
+    setError('');
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(
+        `${API_URL}/api/marketing/modify`,
+        {
+          currentPlan: generatedPlan,
+          modifyRequest: modifyRequest,
+          year,
+          month,
+          brandData: selectedBrands.map(id => brands.find(b => b.id === id))
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      if (response.data.success) {
+        setGeneratedPlan(response.data.plan);
+        setModifyRequest('');
+      }
+    } catch (err) {
+      setError(err.response?.data?.error || '수정 중 오류가 발생했습니다.');
+    } finally {
+      setIsModifying(false);
     }
   };
 
@@ -147,10 +185,36 @@ function MarketingGenerator() {
         <div className="mt-8 bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold mb-4">생성된 마케팅 계획</h2>
           <div className="prose max-w-none">
-            <pre className="whitespace-pre-wrap text-sm text-gray-800">
+            <pre className="whitespace-pre-wrap text-sm text-gray-800 bg-gray-50 p-4 rounded-md">
               {generatedPlan}
             </pre>
           </div>
+
+          {/* 수정 요청 섹션 */}
+          <div className="mt-6 border-t pt-6">
+            <h3 className="text-lg font-semibold mb-3 flex items-center">
+              💬 수정 요청
+            </h3>
+            <p className="text-sm text-gray-600 mb-3">
+              예: "좀 더 구체적으로 작성해줘", "타겟을 20대로 변경", "예산을 늘려줘"
+            </p>
+            <textarea
+              value={modifyRequest}
+              onChange={(e) => setModifyRequest(e.target.value)}
+              placeholder="수정하고 싶은 내용을 입력하세요..."
+              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              rows="3"
+              disabled={isModifying}
+            />
+            <button
+              onClick={handleModify}
+              disabled={isModifying || !modifyRequest.trim()}
+              className="mt-3 w-full bg-purple-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-purple-700 transition duration-200 disabled:bg-gray-400"
+            >
+              {isModifying ? '수정 중... (약 30초 소요)' : '💡 AI에게 수정 요청하기'}
+            </button>
+          </div>
+
           <div className="mt-6 flex gap-4">
             <button
               onClick={() => {
@@ -161,15 +225,18 @@ function MarketingGenerator() {
                 a.download = `마케팅계획_${year}년${month}월.txt`;
                 a.click();
               }}
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+              className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
             >
-              다운로드
+              📥 다운로드
             </button>
             <button
-              onClick={() => setGeneratedPlan('')}
-              className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+              onClick={() => {
+                setGeneratedPlan('');
+                setModifyRequest('');
+              }}
+              className="flex-1 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
             >
-              새로 생성
+              🔄 새로 생성
             </button>
           </div>
         </div>

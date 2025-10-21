@@ -8,7 +8,7 @@ const users = [
   {
     id: 1,
     email: 'admin@peoplepie.com',
-    password: '$2b$10$dummyhash', // 실제로는 bcrypt 해시
+    password: 'welovewkmg1125!', // 실제 비밀번호
     name: '관리자',
     role: 'admin'
   }
@@ -28,9 +28,8 @@ router.post('/login', async (req, res) => {
       });
     }
     
-    // 비밀번호 확인
-    const isValid = await bcrypt.compare(password, user.password);
-    if (!isValid) {
+    // 비밀번호 확인 (간단한 비교)
+    if (password !== user.password) {
       return res.status(401).json({
         success: false,
         error: '이메일 또는 비밀번호가 올바르지 않습니다.'
